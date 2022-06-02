@@ -103,6 +103,15 @@ class SetFrameRange(Application):
     ###############################################################################################
     # implementation
 
+    def get_setting(self, key, default=None):
+        current_step = self.engine.context.step
+        if current_step:
+            step_overrides = super(SetFrameRange, self).get_setting("step_overrides", default=default)
+            overrides = step_overrides.get(current_step['name'], {})
+            return overrides.get(key, super(SetFrameRange, self).get_setting(key, default=default))
+        else:
+            return super(SetFrameRange, self).get_setting(key, default=default)
+
     def get_frame_range_from_shotgun(self):
         """
         get_frame-range_from_shotgun will query shotgun for the
@@ -124,26 +133,41 @@ class SetFrameRange(Application):
 
         sg_in_field = self.get_setting("sg_in_frame_field")
         sg_out_field = self.get_setting("sg_out_frame_field")
+        sg_in_field_fallback = self.get_setting("sg_in_frame_field_fallback")
+        sg_out_field_fallback = self.get_setting("sg_out_frame_field_fallback")
         fields = [sg_in_field, sg_out_field]
+
+        if sg_in_field_fallback:
+            fields.append(sg_in_field_fallback)
+        if sg_out_field_fallback:
+            fields.append(sg_out_field_fallback)
 
         data = self.shotgun.find_one(sg_entity_type, filters=sg_filters, fields=fields)
 
         # check if fields exist!
-        if sg_in_field not in data:
+        if sg_in_field not in data and sg_in_field_fallback not in data:
             raise tank.TankError(
                 "Configuration error: Your current context is connected to a SG "
                 "%s. This entity type does not have a "
                 "field %s.%s!" % (sg_entity_type, sg_entity_type, sg_in_field)
             )
 
-        if sg_out_field not in data:
+        if sg_out_field not in data and sg_out_field_fallback not in data:
             raise tank.TankError(
                 "Configuration error: Your current context is connected to a SG "
                 "%s. This entity type does not have a "
                 "field %s.%s!" % (sg_entity_type, sg_entity_type, sg_out_field)
             )
 
-        return (data[sg_in_field], data[sg_out_field])
+        frame_in = data.get(sg_in_field) or data.get(sg_in_field_fallback)
+        frame_out = data.get(sg_out_field) or data.get(sg_out_field_fallback)
+
+        if frame_in is not None:
+            frame_in = frame_in - self.get_setting("extra_frame_in")
+        if frame_out is not None:
+            frame_out = frame_out + self.get_setting("extra_frame_out")
+
+        return frame_in, frame_out
 
     def get_current_frame_range(self):
         """

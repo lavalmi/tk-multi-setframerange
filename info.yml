@@ -21,17 +21,41 @@ configuration:
 
     sg_in_frame_field:
         type: str
-        default_value: "sg_cut_in"
+        default_value: "sg_head_in"
         description: The ShotGrid field to use to retrieve the in frame. The app will look
                      for this field on the entity associated with the current context (e.g.
                      the current shot, current asset etc).
 
     sg_out_frame_field:
         type: str
-        default_value: "sg_cut_out"
+        default_value: "sg_tail_out"
         description: The ShotGrid field to use to retrieve the out frame. The app will look
                      for this field on the entity associated with the current context (e.g.
                      the current shot, current asset etc).
+
+    sg_in_frame_field_fallback:
+        type: str
+        default_value: "sg_cut_in"
+        description: This field is taken if sg_in_frame_field is empty.
+
+    sg_out_frame_field_fallback:
+        type: str
+        default_value: "sg_cut_out"
+        description: This field is taken if sg_out_frame_field is empty.
+
+    extra_frame_in:
+        type: int
+        default_value: 0
+        description: Frame that are always subtracted from the shotgrit in framerange.
+
+    extra_frame_out:
+        type: int
+        default_value: 0
+        description: Frame that are always added to the shotgrit out framerange.
+
+    step_overrides:
+      type: dict
+      default_value: {}
 
     # hooks
     hook_frame_operation:
